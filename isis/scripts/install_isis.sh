@@ -557,7 +557,8 @@ fi
 if [ -x "$INSTALL_PREFIX/isis/scripts/isisVarInit.py" ]; then
     ISISROOT="$INSTALL_PREFIX"
     ISISDATA="$ISISDATA_PREFIX"
-    "$INSTALL_PREFIX/isis/scripts/isisVarInit.py" "$ISISDATA" "$ISISROOT" || failed_command "Running isisvarinit.py"
+    SPICEQL_CACHE_DIR="$ISISDATA_PREFIX/base"
+    "$INSTALL_PREFIX/isis/scripts/isisVarInit.py" "$ISISDATA" "$ISISROOT" "$SPICEQL_CACHE_DIR" || failed_command "Running isisvarinit.py"
 else
     echo "Warning: isisvarinit.py not found or not executable in $INSTALL_PREFIX/isis/scripts/"
 fi

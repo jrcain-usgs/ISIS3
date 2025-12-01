@@ -109,6 +109,14 @@ parser.add_argument(
     help="ISIS Ale Data Directory, default: %(default)s",
 )
 parser.add_argument(
+    "-s",
+    "--spiceql-dir",
+    default=Path(os.environ["CONDA_PREFIX"] + "/data/base"),
+    type=Path,
+    action=ResolveAction,
+    help="SpiceQL Database Directory, default: %(default)s",
+)
+parser.add_argument(
     "-c", "--cat",
     action="store_true",
     help="If given, the activation script will include a 'cat' action that "
@@ -131,6 +139,7 @@ logging.info("-- ISIS Data Directories --")
 logging.info(mkdir(args.data_dir))
 logging.info(mkdir(args.test_dir))
 logging.info(mkdir(args.ale_dir))
+logging.info(mkdir(args.spiceql_dir))
 
 logging.info("-- Conda activation and deactivation scripts --")
 # Create the conda activation and deactivation directories:
@@ -145,7 +154,8 @@ env_vars = dict(
     ISISROOT=os.environ["CONDA_PREFIX"],
     ISISDATA=args.data_dir,
     ISISTESTDATA=args.test_dir,
-    ALESPICEROOT=args.ale_dir
+    ALESPICEROOT=args.ale_dir,
+    SPICEQL_CACHE_DIR=args.spiceql_dir
 )
 
 # These dicts define the unique aspects of the shell languages
