@@ -11,50 +11,50 @@ on:
 jobs:
 
   # Check if the PR is a bugfix/feature
-  check_labels:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    name: Check PR labels action step
-    # Make the output of this job available to other jobs
-    outputs: 
-      result: ${{steps.execute_py_script.outputs.result}}
-    steps:
-    - name: Checkout files (only the PR Label Checker)
-      uses: actions/checkout@v4
-      with:
-        sparse-checkout: |
-          .github/pr_label_checker.py
-          .github/requirements.txt
-        sparse-checkout-cone-mode: false
-    - name: List files in current Directory
-      run: ls .github
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-        cache: 'pip'
-    - name: Install Python Packages
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r ./.github/requirements.txt
-    - name: Write Output
-      id: execute_py_script
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_API_URL: ${{ secrets.GITHUB_API_URL }}
-        GITHUB_SERVER_URL: ${{ secrets.GITHUB_SERVER_URL }}
-        GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
-      run: echo "result=$(python ./.github/pr_label_checker.py)" >> "$GITHUB_OUTPUT"
-    - name: Show Output
-      run: echo "${{ steps.execute_py_script.outputs.result }}"
+  # check_labels:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+  #   name: Check PR labels action step
+  #   # Make the output of this job available to other jobs
+  #   outputs: 
+  #     result: ${{steps.execute_py_script.outputs.result}}
+  #   steps:
+  #   - name: Checkout files (only the PR Label Checker)
+  #     uses: actions/checkout@v4
+  #     with:
+  #       sparse-checkout: |
+  #         .github/pr_label_checker.py
+  #         .github/requirements.txt
+  #       sparse-checkout-cone-mode: false
+  #   - name: List files in current Directory
+  #     run: ls .github
+  #   - name: Setup Python
+  #     uses: actions/setup-python@v4
+  #     with:
+  #       python-version: '3.10'
+  #       cache: 'pip'
+  #   - name: Install Python Packages
+  #     run: |
+  #       python -m pip install --upgrade pip
+  #       pip install -r ./.github/requirements.txt
+  #   - name: Write Output
+  #     id: execute_py_script
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       GITHUB_API_URL: ${{ secrets.GITHUB_API_URL }}
+  #       GITHUB_SERVER_URL: ${{ secrets.GITHUB_SERVER_URL }}
+  #       GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
+  #     run: echo "result=$(python ./.github/pr_label_checker.py)" >> "$GITHUB_OUTPUT"
+  #   - name: Show Output
+  #     run: echo "${{ steps.execute_py_script.outputs.result }}"
 
 
   build-lts:
-    needs: check_labels
+    # needs: check_labels
     # Only run this step if code was a bugfix
-    if: contains(needs.check_labels.outputs.result, 'bugfix_')
+    #if: contains(needs.check_labels.outputs.result, 'bugfix_')
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          ref: '8.0' # This branch must exist in the repo.  Target LTS changes branch.
+          ref: '830-base-test' # This branch must exist in the repo.  Target LTS changes branch.
           fetch-depth: '0'
       - name: Configure git
         run: |
@@ -84,7 +84,7 @@ jobs:
         uses: peter-evans/create-pull-request@8
         with:
           commit-message: Auto bugfix PR to LTS
-          branch: pr-test
+          branch: 830-base-test
       # - name: Setup conda
       #   uses: conda-incubator/setup-miniconda@v3
       #   with:
