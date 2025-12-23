@@ -81,7 +81,7 @@ jobs:
         run: git cherry-pick -m 1 $GITHUB_SHA
       - name: Failed-cherry-pick PR
         if: steps.cherryPick.outcome == 'failure'
-        uses: peter-evans/create-pull-request@8
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: Auto bugfix PR to LTS
           branch: 830-base-test
