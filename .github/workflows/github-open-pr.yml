@@ -97,7 +97,9 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: Auto bugfix PR to LTS
-          branch: 830-base-test
+          branch: lts-patch-${{ secrets.GITHUB_SHA }}
+          base: 830-base-test
+
       # - name: Setup conda
       #   uses: conda-incubator/setup-miniconda@v3
       #   with:
