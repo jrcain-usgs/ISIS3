@@ -63,31 +63,37 @@ jobs:
       run:
         shell: bash -l {0} # bash login mode so conda can auto activate isis env
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          ref: '830-base-test' # This branch must exist in the repo.  Target LTS changes branch.
-          fetch-depth: '0'
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Cherry Pick
-        id: cherryPick
-        env: 
-          GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
-        continue-on-error: true
-        run: git cherry-pick -m 1 $GITHUB_SHA
+      # - name: Checkout Repo
+      #   uses: actions/checkout@v4
+      #   with:
+      #     submodules: recursive
+      #     ref: '830-base-test' # This branch must exist in the repo.  Target LTS changes branch.
+      #     fetch-depth: '0'
+      # - name: Configure git
+      #   run: |
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      # - name: Cherry Pick
+      #   id: cherryPick
+      #   env: 
+      #     GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
+      #   continue-on-error: true
+      #   run: git cherry-pick -m 1 $GITHUB_SHA
 
       - name: Failed-cherry-pick - Checkout source branch
-        if: steps.cherryPick.outcome == 'failure'
+        # if: steps.cherryPick.outcome == 'failure'
         uses: actions/checkout@v4
         with:
           ref: ''
           fetch-depth: '0'
+
+      - name: Failed Cherry Pick - Create New branch
+        run: |
+          git branch lts-patch-${{ github.ref }}
+          git push
+
       - name: Failed Cherry Pick - Make PR
-        if: steps.cherryPick.outcome == 'failure'
+        # if: steps.cherryPick.outcome == 'failure'
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: Auto bugfix PR to LTS
