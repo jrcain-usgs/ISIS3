@@ -88,16 +88,21 @@ jobs:
           fetch-depth: '0'
 
       - name: Failed Cherry Pick - Create New branch
+        # if: steps.cherryPick.outcome == 'failure'
+        env: 
+          NEW_BRANCH: lts-patch-${{ secrets.GITHUB_SHA }}
         run: |
-          git checkout -b lts-patch-${{ secrets.GITHUB_SHA }}
-          git push --set-upstream origin lts-patch-${{ secrets.GITHUB_SHA }}
+          git checkout -b $NEW_BRANCH
+          git push --set-upstream origin $NEW_BRANCH
 
       - name: Failed Cherry Pick - Make PR
         # if: steps.cherryPick.outcome == 'failure'
+        env: 
+          NEW_BRANCH: lts-patch-${{ secrets.GITHUB_SHA }}
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: Auto bugfix PR to LTS
-          branch: lts-patch-${{ secrets.GITHUB_SHA }}
+          branch: $NEW_BRANCH
           base: 830-base-test
 
       # - name: Setup conda
