@@ -79,7 +79,13 @@ jobs:
           GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
         continue-on-error: true
         run: git cherry-pick -m 1 $GITHUB_SHA
-      - name: Failed-cherry-pick PR
+
+      - name: Failed-cherry-pick - Checkout source branch
+        if: steps.cherryPick.outcome == 'failure'
+        uses: actions/checkout
+        with:
+          fetch-depth: '0'
+      - name: Failed Cherry Pick - Make PR
         if: steps.cherryPick.outcome == 'failure'
         uses: peter-evans/create-pull-request@v8
         with:
