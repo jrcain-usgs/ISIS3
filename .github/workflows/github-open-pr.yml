@@ -82,8 +82,9 @@ jobs:
 
       - name: Failed-cherry-pick - Checkout source branch
         if: steps.cherryPick.outcome == 'failure'
-        uses: actions/checkout
+        uses: actions/checkout@v4
         with:
+          ref: ''
           fetch-depth: '0'
       - name: Failed Cherry Pick - Make PR
         if: steps.cherryPick.outcome == 'failure'
