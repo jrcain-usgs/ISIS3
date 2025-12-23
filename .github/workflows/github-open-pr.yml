@@ -90,7 +90,7 @@ jobs:
       - name: Failed Cherry Pick - Create New branch
         run: |
           git checkout -b lts-patch-${{ secrets.GITHUB_SHA }}
-          git push
+          git push --set-upstream origin lts-patch-${{ secrets.GITHUB_SHA }}
 
       - name: Failed Cherry Pick - Make PR
         # if: steps.cherryPick.outcome == 'failure'
