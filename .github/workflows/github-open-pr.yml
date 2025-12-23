@@ -89,7 +89,7 @@ jobs:
 
       - name: Failed Cherry Pick - Create New branch
         run: |
-          git branch lts-patch-${{ github.ref }}
+          git branch lts-patch-${{ secrets.GITHUB_SHA }}
           git push
 
       - name: Failed Cherry Pick - Make PR
