@@ -2,12 +2,12 @@ name: GH Cherrypick bugfixes/features for LTS/Prod
 
 env:
   ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
-  TARGET_BRANCH: 830-base-test
+  TARGET_BRANCH: pr-ci
 
 on:
   push:
     branches:
-      - pr-ci
+      - pr-ci-dev
       
 jobs:
 
@@ -74,16 +74,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      # - name: Cherry Pick
-      #   id: cherryPick
-      #   env: 
-      #     GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
-      #   continue-on-error: true
-      #   run: |
-      #     git cherry-pick -m 1 $GITHUB_SHA || {
-      #       git cherry-pick --abort
-      #       exit 1
-      #     }
+          
+      - name: Cherry Pick
+        id: cherryPick
+        env: 
+          GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
+        continue-on-error: true
+        run: |
+          git cherry-pick -m 1 $GITHUB_SHA || {
+            git cherry-pick --abort
+            exit 1
+          }
 
       - name: Failed Cherry Pick - Create New branch
         # if: steps.cherryPick.outcome == 'failure'
@@ -112,7 +113,7 @@ jobs:
       #   with:
       #     commit-message: Auto bugfix PR to LTS
       #     branch: $NEW_BRANCH
-      #     base: 830-base-test
+      #     base: ${{ env.TARGET_BRANCH }}830
 
       # - name: Setup conda
       #   uses: conda-incubator/setup-miniconda@v3
