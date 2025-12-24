@@ -2,6 +2,7 @@ name: GH Cherrypick bugfixes/features for LTS/Prod
 
 env:
   ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+  TARGET_BRANCH: 830-base-test
 
 on:
   push:
@@ -11,50 +12,50 @@ on:
 jobs:
 
   # Check if the PR is a bugfix/feature
-  # check_labels:
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write
-  #     pull-requests: write
-  #   name: Check PR labels action step
-  #   # Make the output of this job available to other jobs
-  #   outputs: 
-  #     result: ${{steps.execute_py_script.outputs.result}}
-  #   steps:
-  #   - name: Checkout files (only the PR Label Checker)
-  #     uses: actions/checkout@v4
-  #     with:
-  #       sparse-checkout: |
-  #         .github/pr_label_checker.py
-  #         .github/requirements.txt
-  #       sparse-checkout-cone-mode: false
-  #   - name: List files in current Directory
-  #     run: ls .github
-  #   - name: Setup Python
-  #     uses: actions/setup-python@v4
-  #     with:
-  #       python-version: '3.10'
-  #       cache: 'pip'
-  #   - name: Install Python Packages
-  #     run: |
-  #       python -m pip install --upgrade pip
-  #       pip install -r ./.github/requirements.txt
-  #   - name: Write Output
-  #     id: execute_py_script
-  #     env:
-  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       GITHUB_API_URL: ${{ secrets.GITHUB_API_URL }}
-  #       GITHUB_SERVER_URL: ${{ secrets.GITHUB_SERVER_URL }}
-  #       GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
-  #     run: echo "result=$(python ./.github/pr_label_checker.py)" >> "$GITHUB_OUTPUT"
-  #   - name: Show Output
-  #     run: echo "${{ steps.execute_py_script.outputs.result }}"
+  check_labels:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Check PR labels action step
+    # Make the output of this job available to other jobs
+    outputs: 
+      result: ${{steps.execute_py_script.outputs.result}}
+    steps:
+    - name: Checkout files (only the PR Label Checker)
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          .github/pr_label_checker.py
+          .github/requirements.txt
+        sparse-checkout-cone-mode: false
+    - name: List files in current Directory
+      run: ls .github
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    - name: Install Python Packages
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r ./.github/requirements.txt
+    - name: Write Output
+      id: execute_py_script
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_API_URL: ${{ secrets.GITHUB_API_URL }}
+        GITHUB_SERVER_URL: ${{ secrets.GITHUB_SERVER_URL }}
+        GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
+      run: echo "result=$(python ./.github/pr_label_checker.py)" >> "$GITHUB_OUTPUT"
+    - name: Show Output
+      run: echo "${{ steps.execute_py_script.outputs.result }}"
 
 
   build-lts:
     # needs: check_labels
     # Only run this step if code was a bugfix
-    #if: contains(needs.check_labels.outputs.result, 'bugfix_')
+    if: contains(needs.check_labels.outputs.result, 'bugfix_')
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -63,47 +64,55 @@ jobs:
       run:
         shell: bash -l {0} # bash login mode so conda can auto activate isis env
     steps:
-      # - name: Checkout Repo
-      #   uses: actions/checkout@v4
-      #   with:
-      #     submodules: recursive
-      #     ref: '830-base-test' # This branch must exist in the repo.  Target LTS changes branch.
-      #     fetch-depth: '0'
-      # - name: Configure git
-      #   run: |
-      #     git config user.name "github-actions[bot]"
-      #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          # ref: ${{ env.TARGET_BRANCH }} # This branch must exist in the repo.  Target LTS changes branch.
+          fetch-depth: '0'
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       # - name: Cherry Pick
       #   id: cherryPick
       #   env: 
       #     GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
       #   continue-on-error: true
-      #   run: git cherry-pick -m 1 $GITHUB_SHA
-
-      - name: Failed-cherry-pick - Checkout source branch
-        # if: steps.cherryPick.outcome == 'failure'
-        uses: actions/checkout@v4
-        with:
-          ref: ''
-          fetch-depth: '0'
+      #   run: |
+      #     git cherry-pick -m 1 $GITHUB_SHA || {
+      #       git cherry-pick --abort
+      #       exit 1
+      #     }
 
       - name: Failed Cherry Pick - Create New branch
         # if: steps.cherryPick.outcome == 'failure'
-        env: 
-          NEW_BRANCH: lts-patch-${{ secrets.GITHUB_SHA }}
         run: |
+          NEW_BRANCH="lts-patch-${GITHUB_SHA}"
+
+          # Checkout new branch from target
           git checkout -b $NEW_BRANCH
+
+          # Add changes
+          git checkout $TARGET_BRANCH -- .
+          git checkout $GITHUB_SHA -- .
+          git add .
+          git commit -m "dev change backport (manual)"
+
           git push --set-upstream origin $NEW_BRANCH
 
-      - name: Failed Cherry Pick - Make PR
-        # if: steps.cherryPick.outcome == 'failure'
-        env: 
-          NEW_BRANCH: lts-patch-${{ secrets.GITHUB_SHA }}
-        uses: peter-evans/create-pull-request@v8
-        with:
-          commit-message: Auto bugfix PR to LTS
-          branch: $NEW_BRANCH
-          base: 830-base-test
+          # Create PR
+          gh pr create --base $TARGET_BRANCH --head $NEW_BRANCH --title "dev change backport" --body "Auto PR for LTS Patch.  Please resolve conflicts manually."
+
+      # - name: Failed Cherry Pick - Make PR
+      #   if: steps.cherryPick.outcome == 'failure'
+      #   env: 
+      #     NEW_BRANCH: lts-patch-${{ secrets.GITHUB_SHA }}
+      #   uses: peter-evans/create-pull-request@v8
+      #   with:
+      #     commit-message: Auto bugfix PR to LTS
+      #     branch: $NEW_BRANCH
+      #     base: 830-base-test
 
       # - name: Setup conda
       #   uses: conda-incubator/setup-miniconda@v3
