@@ -68,7 +68,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          # ref: ${{ env.TARGET_BRANCH }} # This branch must exist in the repo.  Target LTS changes branch.
+          ref: ${{ env.TARGET_BRANCH }} # This branch must exist in the repo.  Target LTS changes branch.
           fetch-depth: '0'
       - name: Configure git
         run: |
