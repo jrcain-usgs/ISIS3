@@ -60,7 +60,7 @@ jobs:
     steps:
       - name: Get PR number
         id: getpr
-        uses: bcgove/action-get-pr@0.1.0
+        uses: bcgov/action-get-pr@v0.1.0
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
