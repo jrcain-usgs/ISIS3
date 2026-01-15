@@ -79,8 +79,9 @@ jobs:
         run: git cherry-pick -m 1 $GITHUB_SHA
       - name: Failed Cherry Pick - Comment
         if: steps.cherryPickStep.outcome == 'failure'
-        uses: thollander/actions-comment-pull-request@v2
+        uses: thollander/actions-comment-pull-request@v3
         with:
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
           pr-number: '${{ steps.getpr.outputs.pr }}'
           message: |
             Maintainers: Please cherry-pick this bugfix to LTS.  
