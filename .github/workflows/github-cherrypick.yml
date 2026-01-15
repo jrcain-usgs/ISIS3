@@ -65,7 +65,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          ref: '${{env.CURRENT_LTS}}' # This branch must exist in the repo.  Target LTS changes branch.
+          ref: '${{ env.CURRENT_LTS }}' # This branch must exist in the repo.  Target LTS changes branch.
           fetch-depth: '0'
       - name: Configure git
         run: |
@@ -79,6 +79,7 @@ jobs:
         if: steps.cherryPickStep.outcome == 'failure'
         uses: thollander/actions-comment-pull-request@v2
         with:
+          pr-number: '${{ steps.getpr.outputs.pr }}'
           message: |
             Maintainers: Please cherry-pick this bugfix to LTS.  
             PR:  #${{ steps.getpr.outputs.pr }}
@@ -88,14 +89,13 @@ jobs:
             ```
             git fetch upstream
             git checkout -b cherry-${{ steps.getpr.outputs.pr }} upstream/${{ env.CURRENT_LTS }}
-            git cherry-pick -m 1 #GITHUB_SHA
+            git cherry-pick -m 1 ${{ github.sha }}
 
             # Resolve Merge Conflicts Manually
 
             # Then push to LTS
             git push --set-upstream ${{ env.CURRENT_LTS }}
             ```
-          pr-number: ${{ steps.getpr.outputs.pr }}
       - name: Successful Cherry Pick - Auto Push to LTS
         if: steps.cherryPickStep.outcome == 'success'
         run: git push
