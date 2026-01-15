@@ -58,6 +58,9 @@ jobs:
       run:
         shell: bash -l {0} # bash login mode so conda can auto activate isis env
     steps:
+      - name: Get PR number
+        id: getpr
+        uses: bcgove/action-get-pr@0.1.0
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
@@ -78,12 +81,21 @@ jobs:
         with:
           message: |
             Maintainers: Please cherry-pick this bugfix to LTS.  
-            Its SHA is ${{ github.sha }}.  
-            You may use the following commands:  
+            PR:  #${{ steps.getpr.outputs.pr }}
+            SHA: ${{ github.sha }}.  
+
+            You may use the following commands to cherry-pick:  
             ```
             git fetch upstream
-            git checkout -b cherry-${{ github.event.number }} upstream/${{ env.CURRENT_LTS }}
+            git checkout -b cherry-${{ steps.getpr.outputs.pr }} upstream/${{ env.CURRENT_LTS }}
+            git cherry-pick -m 1 #GITHUB_SHA
+
+            # Resolve Merge Conflicts Manually
+
+            # Then push to LTS
+            git push --set-upstream ${{ env.CURRENT_LTS }}
             ```
+          pr-number: ${{ steps.getpr.outputs.pr }}
       - name: Successful Cherry Pick - Auto Push to LTS
         if: steps.cherryPickStep.outcome == 'success'
         run: git push
