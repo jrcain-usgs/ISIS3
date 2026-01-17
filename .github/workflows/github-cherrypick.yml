@@ -88,7 +88,8 @@ jobs:
             PR:  #${{ steps.getpr.outputs.pr }}
             SHA: ${{ github.sha }}.  
 
-            You may use the following commands to cherry-pick:  
+            You may use the following commands to cherry-pick 
+            (Assuming you have the DOI-USGS/ISIS3 repo as a remote named `upstream`):
             ```
             git fetch upstream
             git checkout -b cherry-${{ steps.getpr.outputs.pr }} upstream/${{ env.CURRENT_LTS }}
@@ -97,7 +98,7 @@ jobs:
             # Resolve Merge Conflicts Manually
 
             # Then push to LTS
-            git push --set-upstream ${{ env.CURRENT_LTS }}
+            git push --set-upstream upstream ${{ env.CURRENT_LTS }}
             ```
       - name: Successful Cherry Pick - Auto Push to LTS
         if: steps.cherryPickStep.outcome == 'success'
