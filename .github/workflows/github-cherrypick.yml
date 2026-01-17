@@ -59,6 +59,7 @@ jobs:
         shell: bash -l {0} # bash login mode so conda can auto activate isis env
     permissions:
       pull-requests: write
+      contents: write
     steps:
       - name: Get PR number
         id: getpr
