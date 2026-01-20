@@ -101,50 +101,47 @@ jobs:
             # Then push to LTS
             git push --set-upstream upstream ${{ env.CURRENT_LTS }}
             ```
+      - name: Setup conda
+        if: steps.cherryPickStep.outcome == 'success'
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: "latest"
+          activate-environment: isis
+          environment-file: environment.yml
+          auto-activate-base: false
+          auto-update-conda: true
+      - name: Check Environment (Debug)
+        if: steps.cherryPickStep.outcome == 'success'
+        env: 
+          ISISROOT: ${{ github.workspace }}/build
+        run: |
+          echo "--- Conda Env"
+          conda info --envs
+          echo "--- cmake Location (Should be in isis conda env)"
+          which cmake
+          cmake --version
+          echo "--- python location"
+          which python
+          echo "--- Working Directory"
+          pwd
+          echo "--- Files"
+          ls
+          echo "--- ISISROOT"
+          echo $ISISROOT
+      - name: Build ISIS
+        if: steps.cherryPickStep.outcome == 'success'
+        env: 
+          ISISROOT: ${{ github.workspace }}/build
+        run: |
+          mkdir build
+          cd build
+          cmake -GNinja -DJP2KFLAG=OFF ../isis
+          ninja -j8
       - name: Successful Cherry Pick - Auto Push to LTS
         if: steps.cherryPickStep.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: git push
-
-
-      # # Skip Build during testing of cherry-pick
-      # - name: Setup conda
-      #   uses: conda-incubator/setup-miniconda@v3
-      #   with:
-      #     miniconda-version: "latest"
-      #     activate-environment: isis
-      #     environment-file: environment.yml
-      #     auto-activate-base: false
-      #     auto-update-conda: true
-      # - name: Check Environment (Debug)
-      #   env: 
-      #     ISISROOT: ${{ github.workspace }}/build
-      #   run: |
-      #     echo "--- Conda Env"
-      #     conda info --envs
-      #     echo "--- cmake Location (Should be in isis conda env)"
-      #     which cmake
-      #     cmake --version
-      #     echo "--- python location"
-      #     which python
-      #     echo "--- Working Directory"
-      #     pwd
-      #     echo "--- Files"
-      #     ls
-      #     echo "--- ISISROOT"
-      #     echo $ISISROOT
-      # - name: Build ISIS
-      #   env: 
-      #     ISISROOT: ${{ github.workspace }}/build
-      #   run: |
-      #     mkdir build
-      #     cd build
-      #     cmake -GNinja -DJP2KFLAG=OFF ../isis
-      #     ninja -j8
-      - name: Push to LTS branch
-        run: |
-          git push
   
   # build-prod:
   #   needs: check_labels
