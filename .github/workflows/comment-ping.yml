@@ -2,9 +2,6 @@ name: Comment Ping test
 
 on: pull_request
 
-env: 
-  GITHUB_SHA: {{ github.sha }}
-
 jobs:
   post_comment:
     runs-on: ubuntu-latest
