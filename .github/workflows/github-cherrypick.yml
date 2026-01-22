@@ -3,6 +3,7 @@ name: GH Cherrypick bugfixes/features for LTS/Prod
 env:
   GITHUB_SHA: ${{ github.sha }}
   CURRENT_LTS: lts-test
+  # CURRENT_PROD: prod-test
 
 on:
   push:
@@ -143,66 +144,96 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: git push
   
-  # build-prod:
+  # cherrypick-prod:
   #   needs: check_labels
-  #   # Only run this step if code was a bugfix
+  #   # Run this step if code was a bugfix or non-breaking change
   #   if: contains(needs.check_labels.outputs.result, 'production_update_')
   #   runs-on: ubuntu-22.04
   #   defaults:
   #     run:
   #       shell: bash -l {0} # bash login mode so conda can auto activate isis env
+  #   permissions:
+  #     pull-requests: write
+  #     contents: write
   #   steps:
-  #     - name: TODO
+  #     - name: Get PR number
+  #       id: getpr
+  #       uses: bcgov/action-get-pr@v0.1.0
+  #     - name: Checkout Repo
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #         ref: '${{ env.CURRENT_PROD }}' # This branch must exist in the repo.  Target Prod changes branch.
+  #         fetch-depth: '0'
+  #     - name: Configure git
   #       run: |
-  #         echo "TODO: This Job is for future use, cherry-picking to a production branch."
-  #         echo "Once the name of the production branch is decided, "
-  #         echo "uncomment the rest of this job, and "
-  #         echo "update the "ref:" in the next step, "Checkout Repo."
-      # - name: Checkout Repo
-      #   uses: actions/checkout@v4
-      #   with:
-      #     submodules: recursive
-      #     ref: '8.0' # This branch must exist in the repo.  Target PROD changes branch.
-      #     fetch-depth: '0'
-      # - name: Configure git
-      #   run: |
-      #     git config user.name "github-actions[bot]"
-      #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      # - name: Cherry Pick
-      #   run: git cherry-pick -m 1 $GITHUB_SHA
-      # - name: Setup conda
-      #   uses: conda-incubator/setup-miniconda@v3
-      #   with:
-      #     miniconda-version: "latest"
-      #     activate-environment: isis
-      #     environment-file: environment.yml
-      #     auto-activate-base: false
-      #     auto-update-conda: true
-      # - name: Check Environment (Debug)
-      #   env: 
-      #     ISISROOT: ${{ github.workspace }}/build
-      #   run: |
-      #     echo "--- Conda Env"
-      #     conda info --envs
-      #     echo "--- cmake Location (Should be in isis conda env)"
-      #     which cmake
-      #     cmake --version
-      #     echo "--- python location"
-      #     which python
-      #     echo "--- Working Directory"
-      #     pwd
-      #     echo "--- Files"
-      #     ls
-      #     echo "--- ISISROOT"
-      #     echo $ISISROOT
-      # - name: Build ISIS
-      #   env: 
-      #     ISISROOT: ${{ github.workspace }}/build
-      #   run: |
-      #     mkdir build
-      #     cd build
-      #     cmake -GNinja -DJP2KFLAG=OFF ../isis
-      #     ninja -j8
-      # - name: Push to LTS branch
-      #   run: |
-      #     git push
+  #         git config user.name "github-actions[bot]"
+  #         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  #     - name: Cherry Pick
+  #       id: cherryPickStep
+  #       continue-on-error: true
+  #       run: git cherry-pick -m 1 $GITHUB_SHA
+  #     - name: Failed Cherry Pick - Comment
+  #       if: steps.cherryPickStep.outcome == 'failure'
+  #       uses: thollander/actions-comment-pull-request@v3
+  #       with:
+  #         github-token: '${{ secrets.GITHUB_TOKEN }}'
+  #         pr-number: '${{ steps.getpr.outputs.pr }}'
+  #         message: |
+  #           Maintainers: Please cherry-pick this bugfix to Production.  
+  #           PR:  #${{ steps.getpr.outputs.pr }}
+  #           SHA: ${{ github.sha }}.  
+
+  #           You may use the following commands to cherry-pick 
+  #           (Assuming you have the DOI-USGS/ISIS3 repo as a remote named `upstream`):
+  #           ```
+  #           git fetch upstream
+  #           git checkout -b cherry-${{ steps.getpr.outputs.pr }} upstream/${{ env.CURRENT_PROD }}
+  #           git cherry-pick -m 1 ${{ github.sha }}
+
+  #           # Resolve Merge Conflicts Manually
+
+  #           # Then push to LTS
+  #           git push --set-upstream upstream ${{ env.CURRENT_PROD }}
+  #           ```
+  #     - name: Setup conda
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       uses: conda-incubator/setup-miniconda@v3
+  #       with:
+  #         miniconda-version: "latest"
+  #         activate-environment: isis
+  #         environment-file: environment.yml
+  #         auto-activate-base: false
+  #         auto-update-conda: true
+  #     - name: Check Environment (Debug)
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       env: 
+  #         ISISROOT: ${{ github.workspace }}/build
+  #       run: |
+  #         echo "--- Conda Env"
+  #         conda info --envs
+  #         echo "--- cmake Location (Should be in isis conda env)"
+  #         which cmake
+  #         cmake --version
+  #         echo "--- python location"
+  #         which python
+  #         echo "--- Working Directory"
+  #         pwd
+  #         echo "--- Files"
+  #         ls
+  #         echo "--- ISISROOT"
+  #         echo $ISISROOT
+  #     - name: Build ISIS
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       env: 
+  #         ISISROOT: ${{ github.workspace }}/build
+  #       run: |
+  #         mkdir build
+  #         cd build
+  #         cmake -GNinja -DJP2KFLAG=OFF ../isis
+  #         ninja -j8
+  #     - name: Successful Cherry Pick - Auto Push to LTS
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       run: git push
