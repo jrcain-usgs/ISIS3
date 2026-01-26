@@ -50,6 +50,6 @@ jobs:
       MAX_PROD: ${{ needs.detect_version.outputs.maxprod }}
     steps:
       - name: Print Max LTS Version detected
-        run: echo "Highest LTS: $MAX_LTS"
+        run: echo "Highest LTS... $MAX_LTS"
       - name: Print Max Production Version detected
-        run: echo "Highest Pruduction: $MAX_PROD"
+        run: echo "Highest Production... $MAX_PROD"
