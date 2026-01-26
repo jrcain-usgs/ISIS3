@@ -9,6 +9,7 @@ jobs:
 
   detect_version:
     name: Detect Version
+    id: detect_version
     runs-on: ubuntu-latest
     outputs:
       result: ${{steps.parse.outputs.maxlts}}
@@ -28,4 +29,10 @@ jobs:
       - name: Show Output
         run: echo "${{ steps.parse.outputs.maxlts }}"
 
-
+  access_version:
+    needs: detect_version
+    name: Access/Use Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Max Version detected
+        run: echo "${{ needs.detect_version.outputs.maxlts }}"
