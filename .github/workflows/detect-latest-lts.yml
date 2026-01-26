@@ -19,7 +19,7 @@ jobs:
         id: parse
         run: |
           MAX_LTS="$( \
-          git ls-remote --heads upstream | \
+          git ls-remote --heads origin | \
           sed '/-lts/!d; s/^.*refs\/heads\///; s/-lts//; /^[0-9][0-9]*$/!d' | \
           sort -n | \
           tail -n 1 \
