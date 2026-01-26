@@ -11,7 +11,7 @@ jobs:
     name: Detect Version
     runs-on: ubuntu-latest
     outputs:
-      result: ${{steps.parse.outputs.maxlts}}
+      result: ${{ steps.parse.outputs.maxlts }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,4 +34,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print Max Version detected
-        run: echo "${{ needs.detect_version.outputs.maxlts }}"
+        run: echo "${{ needs.detect_version.outputs.result }}"
