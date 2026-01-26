@@ -9,7 +9,6 @@ jobs:
 
   detect_version:
     name: Detect Version
-    id: detect_version
     runs-on: ubuntu-latest
     outputs:
       result: ${{steps.parse.outputs.maxlts}}
