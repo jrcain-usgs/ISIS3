@@ -1,0 +1,31 @@
+name: Detect Latest LTS version
+
+on:
+  push:
+    branches:
+      - cicd-lts-ver
+
+jobs:
+
+  detect_version:
+    name: Detect Version
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{steps.parse.outputs.maxlts}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Fetch and Parse Version
+        id: parse
+        run: |
+          MAX_LTS="$( \
+          git ls-remote --heads upstream | \
+          sed '/-lts/!d; s/^.*refs\/heads\///; s/-lts//; /^[0-9][0-9]*$/!d' | \
+          sort -n | \
+          tail -n 1 \
+          )"
+          echo "maxlts=${MAX_LTS}-lts" >> $GITHUB_OUTPUT
+      - name: Show Output
+        run: echo "${{ steps.parse.outputs.maxlts }}"
+
+
