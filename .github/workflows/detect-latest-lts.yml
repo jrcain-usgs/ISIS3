@@ -37,8 +37,9 @@ jobs:
           )"
           echo "maxprod=${MAX_PROD}-prod" >> $GITHUB_OUTPUT
       - name: Show Output
-        run: echo "${{ steps.parse_lts.outputs.maxlts }}"
-        run: echo "${{ steps.parse_prod.outputs.maxprod }}"
+        run: |
+          echo "${{ steps.parse_lts.outputs.maxlts }}"
+          echo "${{ steps.parse_prod.outputs.maxprod }}"
 
   access_version:
     needs: detect_version
