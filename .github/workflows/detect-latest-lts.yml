@@ -11,12 +11,13 @@ jobs:
     name: Detect Version
     runs-on: ubuntu-latest
     outputs:
-      maxlts: ${{ steps.parse.outputs.maxlts }}
+      maxlts: ${{ steps.parse_lts.outputs.maxlts }}
+      maxprod: ${{ steps.parse_prod.outputs.maxprod }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Fetch and Parse Version
-        id: parse
+      - name: Fetch and Parse LTS Version
+        id: parse_lts
         run: |
           MAX_LTS="$( \
           git ls-remote --heads origin | \
@@ -25,8 +26,19 @@ jobs:
           tail -n 1 \
           )"
           echo "maxlts=${MAX_LTS}-lts" >> $GITHUB_OUTPUT
+      - name: Fetch and Parse Prod Version
+        id: parse_prod
+        run: |
+          MAX_PROD="$( \
+          git ls-remote --heads origin | \
+          sed '/-prod/!d; s/^.*refs\/heads\///; s/-prod//; /^[0-9][0-9]*$/!d' | \
+          sort -n | \
+          tail -n 1 \
+          )"
+          echo "maxprod=${MAX_PROD}-prod" >> $GITHUB_OUTPUT
       - name: Show Output
-        run: echo "${{ steps.parse.outputs.maxlts }}"
+        run: echo "${{ steps.parse_lts.outputs.maxlts }}"
+        run: echo "${{ steps.parse_prod.outputs.maxprod }}"
 
   access_version:
     needs: detect_version
@@ -34,6 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MAX_LTS: ${{ needs.detect_version.outputs.maxlts }}
+      MAX_PROD: ${{ needs.detect_version.outputs.maxprod }}
     steps:
-      - name: Print Max Version detected
+      - name: Print Max LTS Version detected
         run: echo $MAX_LTS
+      - name: Print Max Production Version detected
+        run: echo $MAX_PROD
