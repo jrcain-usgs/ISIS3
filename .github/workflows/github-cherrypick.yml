@@ -16,4 +16,4 @@ jobs:
       run: sudo apt install mailutils -y
         
     - name: Send it
-      run: echo "Hello World!" | mail -s "GH Actions Test Email" "jrcain@usgs.gov"
+      run: echo 'Hello Jacob, \nwith different and specifically addressed content, will this email reach you?  Please let me know. \nThanks - Githro" | mail -s "GH Actions Test Email" "jrcain@usgs.gov"
