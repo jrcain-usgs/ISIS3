@@ -20,9 +20,21 @@ jobs:
 
         msg="ISIS Maintainers:
         
+        (This is a test email)
+
         Please cherry-pick this bugfix to ISIS LTS.
 
         You may use the following commands to cherry-pick...
+
+        git fetch upstream
+        git checkout -b cherry-1234 upstream/9-lts
+        git cherry-pick -m 1 ab1c23
+
+        # Resolve Merge Conflicts Manually
+
+        # Then push to LTS
+        git push --set-upstream upstream 9-lts
+
 
         "
         mail -s "GH Actions Test Email" "jrcain@usgs.gov" <<< "$msg"
