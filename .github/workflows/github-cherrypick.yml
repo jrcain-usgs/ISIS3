@@ -16,4 +16,13 @@ jobs:
       run: sudo apt install mailutils -y
         
     - name: Send it
-      run: echo "Hello World!" | mail -s "GH Actions Test Email" "jrcain@usgs.gov"
+      run: |
+
+        msg="ISIS Maintainers:
+        
+        Please cherry-pick this bugfix to ISIS LTS.
+
+        You may use the following commands to cherry-pick...
+
+        "
+        mail -s "GH Actions Test Email" "jrcain@usgs.gov" <<< $msg
