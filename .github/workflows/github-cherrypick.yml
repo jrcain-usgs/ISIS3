@@ -18,23 +18,55 @@ jobs:
     - name: Send it
       run: |
 
-        msg="ISIS Maintainers:
+        # msg="ISIS Maintainers:
         
-        (This is a test email)
+        # (This is a test email)
 
-        Please cherry-pick this bugfix to ISIS LTS.
+        # Please cherry-pick this bugfix to ISIS LTS.
 
-        You may use the following commands to cherry-pick...
+        # You may use the following commands to cherry-pick...
 
-        git fetch upstream
-        git checkout -b cherry-1234 upstream/9-lts
-        git cherry-pick -m 1 ab1c23
+        # git fetch upstream
+        # git checkout -b cherry-1234 upstream/9-lts
+        # git cherry-pick -m 1 ab1c23
 
-        # Resolve Merge Conflicts Manually
+        # # Resolve Merge Conflicts Manually
 
-        # Then push to LTS
-        git push --set-upstream upstream 9-lts
+        # # Then push to LTS
+        # git push --set-upstream upstream 9-lts
+
+
+        # "
+        # mail -s "GH Actions Test Email" "jrcain@usgs.gov" <<< "$msg"
+
+        formatted_message="Subject: ISIS CICD Test Email
+        To: jrcain@usgs.gov
+        Content-Type: text/html
+        MIME-Version: 1.0
+        
+        <p>(This is a test email)</p>
+        <p><em>ISIS Maintainers:</em></p>
+        
+        <p>
+          <b>Please cherry-pick this bugfix</b> to ISIS LTS.
+          You may use the following commands to cherry-pick...
+        </p>
+        
+        <pre>
+          <code>
+            git fetch upstream
+            git checkout -b cherry-1234 upstream/9-lts
+            git cherry-pick -m 1 ab1c23
+
+            # Resolve Merge Conflicts Manually
+
+            # Then push to LTS
+            git push --set-upstream upstream 9-lts
+          </code>
+        </pre>
 
 
         "
-        mail -s "GH Actions Test Email" "jrcain@usgs.gov" <<< "$msg"
+
+        sendmail -t <<<"$formatted_message"
+
