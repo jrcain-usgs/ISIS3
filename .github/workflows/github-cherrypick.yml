@@ -52,18 +52,14 @@ jobs:
           You may use the following commands to cherry-pick...
         </p>
         
-        <pre>
-          <code>
-            git fetch upstream
-            git checkout -b cherry-1234 upstream/9-lts
-            git cherry-pick -m 1 ab1c23
+        <pre><code>git fetch upstream
+        git checkout -b cherry-1234 upstream/9-lts
+        git cherry-pick -m 1 ab1c23
 
-            # Resolve Merge Conflicts Manually
+        # Resolve Merge Conflicts Manually
 
-            # Then push to LTS
-            git push --set-upstream upstream 9-lts
-          </code>
-        </pre>
+        # Then push to LTS
+        git push --set-upstream upstream 9-lts</code></pre>
 
 
         "
