@@ -25,4 +25,4 @@ jobs:
         You may use the following commands to cherry-pick...
 
         "
-        mail -s "GH Actions Test Email" "jrcain@usgs.gov" <<< $msg
+        mail -s "GH Actions Test Email" "jrcain@usgs.gov" <<< "$msg"
