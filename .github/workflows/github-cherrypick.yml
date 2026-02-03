@@ -38,7 +38,7 @@ jobs:
         # mail -s "GH Actions Test Email" "softwaremaintainers@usgs.gov" <<< "$msg"
 
         formatted_message="Subject: ISIS CICD Test Email
-        To: softwaremaintainers@usgs.gov
+        To: jrcain@usgs.gov
         Content-Type: text/html
         MIME-Version: 1.0
         
