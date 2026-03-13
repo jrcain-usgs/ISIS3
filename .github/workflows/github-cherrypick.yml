@@ -23,133 +23,132 @@ jobs:
     steps:
     - name: Checkout files (only the PR Label Checker)
       uses: actions/checkout@v4
-      with:
-        sparse-checkout: |
-          .github/pr_label_checker.py
-          .github/requirements.txt
-          .github/cherry-pick-bulletin-template.xml
-        sparse-checkout-cone-mode: false
     - name: List files in current Directory
       run: ls .github
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-        cache: 'pip'
-    - name: Install Python Packages
+    - name: Get changed files
+      id: files
       run: |
-        python -m pip install --upgrade pip
-        pip install -r ./.github/requirements.txt
-    - name: Write Output
-      id: execute_py_script
+        files=$(gh api \
+          repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
+          --jq '.[].filename')
+        echo "Changed files:"
+        printf '  -> %s\n' $files
+        echo "changed_files<<EOF" >> $GITHUB_ENV
+        echo "$files" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_API_URL: ${{ secrets.GITHUB_API_URL }}
-        GITHUB_SERVER_URL: ${{ secrets.GITHUB_SERVER_URL }}
-      run: echo "result=$(python ./.github/pr_label_checker.py)" >> "$GITHUB_OUTPUT"
-    - name: Show Output
-      run: echo "${{ steps.execute_py_script.outputs.result }}"
+        GH_TOKEN: ${{ github.token }}
+    
+    # - name: Write Output
+    #   id: execute_py_script
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     GITHUB_API_URL: ${{ secrets.GITHUB_API_URL }}
+    #     GITHUB_SERVER_URL: ${{ secrets.GITHUB_SERVER_URL }}
+    #   run: echo "result=$(python ./.github/pr_label_checker.py)" >> "$GITHUB_OUTPUT"
+    # - name: Show Output
+    #   run: echo "${{ steps.execute_py_script.outputs.result }}"
 
 
-  cherrypick-lts:
-    needs: check_labels
-    # Only run this step if code was a bugfix
-    if: contains(needs.check_labels.outputs.result, 'bugfix_')
-    runs-on: ubuntu-22.04
-    defaults:
-      run:
-        shell: bash -l {0} # bash login mode so conda can auto activate isis env
-    permissions:
-      pull-requests: write
-      contents: write
-    steps:
-      - name: Get PR number
-        id: getpr
-        uses: bcgov/action-get-pr@v0.1.0
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          ref: '${{ env.CURRENT_LTS }}' # This branch must exist in the repo.  Target LTS changes branch.
-          fetch-depth: '0'
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Cherry Pick
-        id: cherryPickStep
-        continue-on-error: true
-        run: git cherry-pick -m 1 $GITHUB_SHA
+  # cherrypick-lts:
+  #   needs: check_labels
+  #   # Only run this step if code was a bugfix
+  #   if: contains(needs.check_labels.outputs.result, 'bugfix_')
+  #   runs-on: ubuntu-22.04
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0} # bash login mode so conda can auto activate isis env
+  #   permissions:
+  #     pull-requests: write
+  #     contents: write
+  #   steps:
+  #     - name: Get PR number
+  #       id: getpr
+  #       uses: bcgov/action-get-pr@v0.1.0
+  #     - name: Checkout Repo
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #         ref: '${{ env.CURRENT_LTS }}' # This branch must exist in the repo.  Target LTS changes branch.
+  #         fetch-depth: '0'
+  #     - name: Configure git
+  #       run: |
+  #         git config user.name "github-actions[bot]"
+  #         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  #     - name: Cherry Pick
+  #       id: cherryPickStep
+  #       continue-on-error: true
+  #       run: git cherry-pick -m 1 $GITHUB_SHA
 
-      - name: Failed Cherry Pick - Email
-        if: steps.cherryPickStep.outcome = 'failure'
-        env:
-          GITHUB_PR: ${{ steps.getpr.outputs.pr }}
-          GOV_DELIVERY_AUTH: ${{ secrets.GOV_DELIVERY_AUTH }}
-        run: |
-          apt install -y xmlstarlet
+  #     - name: Failed Cherry Pick - Email
+  #       if: steps.cherryPickStep.outcome = 'failure'
+  #       env:
+  #         GITHUB_PR: ${{ steps.getpr.outputs.pr }}
+  #         GOV_DELIVERY_AUTH: ${{ secrets.GOV_DELIVERY_AUTH }}
+  #       run: |
+  #         apt install -y xmlstarlet
 
-          # Create Template
-          sed -e "s/###PR###/${PR}/" \
-          -e "s/###SHA###/${SHA}/" \
-          -e "s/###CURRENT_LTS###/${CURRENT_LTS}/" \
-          ./.github/bulletin-template.xml > bulletin-${PR}.xml
+  #         # Create Template
+  #         sed -e "s/###PR###/${PR}/" \
+  #         -e "s/###SHA###/${SHA}/" \
+  #         -e "s/###CURRENT_LTS###/${CURRENT_LTS}/" \
+  #         ./.github/bulletin-template.xml > bulletin-${PR}.xml
 
-          # Post Draft
-          BULLETIN_NO="$(
-          curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins.xml \
-          -H 'Content-Type: application/xml' \
-          -H "Authorization: ${GOV_DELIVERY_AUTH}" \
-          -d @bulletin-${PR}.xml | \
-          xmlstarlet sel -T -t -v /bulletin/to-param)"
+  #         # Post Draft
+  #         BULLETIN_NO="$(
+  #         curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins.xml \
+  #         -H 'Content-Type: application/xml' \
+  #         -H "Authorization: ${GOV_DELIVERY_AUTH}" \
+  #         -d @bulletin-${PR}.xml | \
+  #         xmlstarlet sel -T -t -v /bulletin/to-param)"
 
-          # Send Test Email
-          curl -X PUT https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/$BULLETIN_NO/sendtest \
-          -H 'Content-Type: application/xml' \
-          -H "Authorization: ${GOV_DELIVERY_AUTH}" \
-          -d '<bulletin><email_addresses type="array"><email_address>jrcain@usgs.gov</email_address></email_addresses></bulletin>'
+  #         # Send Test Email
+  #         curl -X PUT https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/$BULLETIN_NO/sendtest \
+  #         -H 'Content-Type: application/xml' \
+  #         -H "Authorization: ${GOV_DELIVERY_AUTH}" \
+  #         -d '<bulletin><email_addresses type="array"><email_address>jrcain@usgs.gov</email_address></email_addresses></bulletin>'
 
-      - name: Setup conda
-        if: steps.cherryPickStep.outcome == 'success'
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniconda-version: "latest"
-          activate-environment: isis
-          environment-file: environment.yml
-          auto-activate-base: false
-          auto-update-conda: true
-      - name: Check Environment (Debug)
-        if: steps.cherryPickStep.outcome == 'success'
-        env: 
-          ISISROOT: ${{ github.workspace }}/build
-        run: |
-          echo "--- Conda Env"
-          conda info --envs
-          echo "--- cmake Location (Should be in isis conda env)"
-          which cmake
-          cmake --version
-          echo "--- python location"
-          which python
-          echo "--- Working Directory"
-          pwd
-          echo "--- Files"
-          ls
-          echo "--- ISISROOT"
-          echo $ISISROOT
-      - name: Build ISIS
-        if: steps.cherryPickStep.outcome == 'success'
-        env: 
-          ISISROOT: ${{ github.workspace }}/build
-        run: |
-          mkdir build
-          cd build
-          cmake -GNinja -DJP2KFLAG=OFF ../isis
-          ninja -j8
-      - name: Successful Cherry Pick - Auto Push to LTS
-        if: steps.cherryPickStep.outcome == 'success'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git push
+  #     - name: Setup conda
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       uses: conda-incubator/setup-miniconda@v3
+  #       with:
+  #         miniconda-version: "latest"
+  #         activate-environment: isis
+  #         environment-file: environment.yml
+  #         auto-activate-base: false
+  #         auto-update-conda: true
+  #     - name: Check Environment (Debug)
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       env: 
+  #         ISISROOT: ${{ github.workspace }}/build
+  #       run: |
+  #         echo "--- Conda Env"
+  #         conda info --envs
+  #         echo "--- cmake Location (Should be in isis conda env)"
+  #         which cmake
+  #         cmake --version
+  #         echo "--- python location"
+  #         which python
+  #         echo "--- Working Directory"
+  #         pwd
+  #         echo "--- Files"
+  #         ls
+  #         echo "--- ISISROOT"
+  #         echo $ISISROOT
+  #     - name: Build ISIS
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       env: 
+  #         ISISROOT: ${{ github.workspace }}/build
+  #       run: |
+  #         mkdir build
+  #         cd build
+  #         cmake -GNinja -DJP2KFLAG=OFF ../isis
+  #         ninja -j8
+  #     - name: Successful Cherry Pick - Auto Push to LTS
+  #       if: steps.cherryPickStep.outcome == 'success'
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       run: git push
   
   # cherrypick-prod:
   #   needs: check_labels
