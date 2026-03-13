@@ -2,13 +2,13 @@ name: GH Cherrypick bugfixes/features for LTS/Prod
 
 env:
   GITHUB_SHA: ${{ github.sha }}
-  CURRENT_LTS: lts-test
+  CURRENT_LTS: lts-test-ch
   # CURRENT_PROD: prod-test
 
 on:
   push:
     branches:
-      - dev-test
+      - dev-test-ch
       
 jobs:
   # Check if the PR is a bugfix/feature
