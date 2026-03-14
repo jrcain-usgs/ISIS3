@@ -40,7 +40,7 @@ jobs:
           repos/${{ github.repository }}/pulls/$GITHUB_PR/files \
           --jq '.[].filename')
         echo "Changed files:"
-        printf '  -> %s\n' $files
+        printf '%s\n' $files
         echo "changed_files<<EOF" >> $GITHUB_ENV
         echo "$files" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
