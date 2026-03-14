@@ -43,6 +43,7 @@ jobs:
         else
             echo "No Fixes Found"
             echo "fixes=false" >> "$GITHUB_OUTPUT"
+        fi
     
     # - name: Write Output
     #   id: execute_py_script
