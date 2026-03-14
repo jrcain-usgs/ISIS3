@@ -33,6 +33,7 @@ jobs:
     - name: Get changed files
       env:
         GITHUB_PR: ${{ steps.getpr.outputs.pr }}
+        GH_TOKEN: ${{ github.token }}
       id: files
       run: |
         files=$(gh api \
@@ -43,8 +44,6 @@ jobs:
         echo "changed_files<<EOF" >> $GITHUB_ENV
         echo "$files" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
-      env:
-        GH_TOKEN: ${{ github.token }}
     
     # - name: Write Output
     #   id: execute_py_script
