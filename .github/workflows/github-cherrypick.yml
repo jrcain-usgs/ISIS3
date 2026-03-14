@@ -19,7 +19,7 @@ jobs:
     name: Check PR labels action step
     # Make the output of this job available to other jobs
     outputs: 
-      result: ${{steps.execute_py_script.outputs.result}}
+      fixes: ${{steps.execute_py_script.outputs.fixes}}
     steps:
     - name: Checkout files (only the PR Label Checker)
       uses: actions/checkout@v4
@@ -36,14 +36,13 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       id: files
       run: |
-        if \
-        gh api repos/${{ github.repository }}/ISIS3/pulls/$GITHUB_PR/files --jq '.[].filename' | \
-        grep '^changes\/[0-9]*\.fix\.md'; then
+        gh api repos/${{ github.repository }}/ISIS3/pulls/$GITHUB_PR/files --jq '.[].filename' > fixFragments.txt
+        if grep '^changes\/[0-9]*\.fix\.md' fixFragments.txt; then
             echo "Fixes Found"
-            echo "fixes=true" >> $GITHUB_ENV
+            echo "fixes=true" >> "$GITHUB_OUTPUT"
         else
             echo "No Fixes Found"
-            echo "fixes=false" >> $GITHUB_ENV
+            echo "fixes=false" >> "$GITHUB_OUTPUT"
     
     # - name: Write Output
     #   id: execute_py_script
