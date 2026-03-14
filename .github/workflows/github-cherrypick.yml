@@ -37,13 +37,15 @@ jobs:
       id: files
       run: |
         if gh api repos/${{ github.repository }}/pulls/${{ steps.getpr.outputs.pr }}/files --jq '.[].filename' | \
-        grep '^changes\/[0-9]*\.fix\.md'; then
+        grep '^changes\/[0-9]*\.fix\.md$'; then
             echo "Fixes Found"
             echo "fixes=true" >> $GITHUB_OUTPUT
         else
             echo "No Fixes Found"
             echo "fixes=false" >> $GITHUB_OUTPUT
         fi
+
+  
     
     # - name: Write Output
     #   id: execute_py_script
