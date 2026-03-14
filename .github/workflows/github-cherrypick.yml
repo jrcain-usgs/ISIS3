@@ -36,7 +36,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       id: files
       run: |
-        gh api repos/${{ github.repository }}/ISIS3/pulls/$GITHUB_PR/files --jq '.[].filename' > fixFragments.txt
+        gh api repos/${{ github.repository }}/ISIS3/pulls/${{ steps.getpr.outputs.pr }}/files --jq '.[].filename' > fixFragments.txt
         if grep '^changes\/[0-9]*\.fix\.md' fixFragments.txt; then
             echo "Fixes Found"
             echo "fixes=true" >> "$GITHUB_OUTPUT"
