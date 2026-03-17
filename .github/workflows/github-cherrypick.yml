@@ -76,7 +76,7 @@ jobs:
         run: git cherry-pick -m 1 $GITHUB_SHA
 
       - name: Failed Cherry Pick - Email
-        if: steps.cherryPickStep.outcome = 'failure'
+        if: steps.cherryPickStep.outcome == 'failure'
         env:
           GITHUB_PR: ${{ needs.check_labels.outputs.pr }}
           GOV_DELIVERY_AUTH: ${{ secrets.GOV_DELIVERY_AUTH }}
