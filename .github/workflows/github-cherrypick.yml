@@ -24,13 +24,16 @@ jobs:
     steps:
     - name: Checkout files (only the PR Label Checker)
       uses: actions/checkout@v4
-    - name: List files in current Directory
-      run: ls .github
     - name: Get PR number
       id: getpr
+      continue-on-error: true
       uses: bcgov/action-get-pr@v0.1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Check if PR
+      run: |
+        echo "No PR Number found (this is probably just a push). Exiting..."
+        exit
     - name: Detect Fix Change Fragments
       env:
         GH_TOKEN: ${{ github.token }}
