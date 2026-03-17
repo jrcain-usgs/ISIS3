@@ -2,7 +2,6 @@ name: GH Cherrypick bugfixes/features for LTS/Prod
 
 env:
   GITHUB_SHA: ${{ github.sha }}
-  CURRENT_LTS: lts-test-ch
   # CURRENT_PROD: prod-test
 
 on:
@@ -11,6 +10,39 @@ on:
       - dev-test-ch
       
 jobs:
+
+  get_ver:
+    name: Get Latest LTS/Prod Versions
+    runs-on: ubuntu-latest
+    outputs:
+      maxlts: ${{ steps.parse_lts.outputs.maxlts }}
+      maxprod: ${{ steps.parse_prod.outputs.maxprod }}
+    steps:
+    - name: Fetch/Parse LTS Version
+      id: parse_lts
+      run: |
+        MAX_LTS="$( \
+        git ls-remote --heads origin | \
+        sed '/-lts/!d; s/^.*refs\/heads\///; s/-lts//; /^[0-9][0-9]*$/!d' | \
+        sort -n | \
+        tail -n 1 \
+        )"
+        echo "maxlts=${MAX_LTS}-lts" >> $GITHUB_OUTPUT
+    - name: Fetch/Parse Prod Version
+      id: parse_prod
+      run: |
+        MAX_PROD="$( \
+        git ls-remote --heads origin | \
+        sed '/-prod/!d; s/^.*refs\/heads\///; s/-prod//; /^[0-9][0-9]*$/!d' | \
+        sort -n | \
+        tail -n 1 \
+        )"
+        echo "maxprod=${MAX_PROD}-prod" >> $GITHUB_OUTPUT
+    - name: Echo Versions
+      run: |
+        echo "Detected LTS Version:  ${{ steps.parse_lts.outputs.maxlts }}"
+        echo "Detected Prod Version: ${{ steps.parse_prod.outputs.maxprod }}"
+
   # Check if the PR is a bugfix/feature
   check_labels:
     runs-on: ubuntu-latest
@@ -50,7 +82,9 @@ jobs:
         fi
 
   cherrypick-lts:
-    needs: check_labels
+    needs: 
+      - get_ver
+      - check_labels
     # Only run this step if code was a bugfix
     if: needs.check_labels.outputs.fixes == 'true'
     runs-on: ubuntu-22.04
@@ -60,12 +94,14 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
+    env:
+      MAX_LTS: ${{ needs.get_ver.outputs.maxlts }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          ref: '${{ env.CURRENT_LTS }}' # This branch must exist in the repo.  Target LTS changes branch.
+          ref: '${{ env.MAX_LTS }}' # This branch must exist in the repo.  Target LTS changes branch.
           fetch-depth: '0'
       - name: Configure git
         run: |
@@ -90,7 +126,7 @@ jobs:
           # Create Template
           sed -e "s/###PR###/${GITHUB_PR}/" \
           -e "s/###SHA###/${GITHUB_SHA}/" \
-          -e "s/###CURRENT_LTS###/${CURRENT_LTS}/" \
+          -e "s/###CURRENT_LTS###/${MAX_LTS}/" \
           .github/cherry-pick-bulletin-template.xml > bulletin-${GITHUB_PR}.xml
 
           # Post Draft
