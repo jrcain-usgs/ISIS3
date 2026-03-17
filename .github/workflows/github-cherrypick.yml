@@ -91,7 +91,7 @@ jobs:
           sed -e "s/###PR###/${GITHUB_PR}/" \
           -e "s/###SHA###/${GITHUB_SHA}/" \
           -e "s/###CURRENT_LTS###/${CURRENT_LTS}/" \
-          ./.github/bulletin-template.xml > bulletin-${GITHUB_PR}.xml
+          .github/bulletin-template.xml > bulletin-${GITHUB_PR}.xml
 
           # Post Draft
           BULLETIN_NO="$(
