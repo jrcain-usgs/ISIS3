@@ -138,19 +138,25 @@ jobs:
           -e "s/###CURRENT_LTS###/${MAX_LTS}/" \
           .github/cherry-pick-bulletin-template.xml > bulletin-${GITHUB_PR}.xml
 
-          # Post Draft
-          BULLETIN_NO="$(
-          curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins.xml \
+          # Post and Send Bulletin
+          curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/send_now \
           -H 'Content-Type: application/xml' \
           -H "Authorization: ${GOV_DELIVERY_AUTH}" \
-          -d @bulletin-${GITHUB_PR}.xml | \
-          xmlstarlet sel -T -t -v /bulletin/to-param)"
+          -d @bulletin-${GITHUB_PR}.xml
 
-          # Send Test Email
-          curl -X PUT https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/$BULLETIN_NO/sendtest \
-          -H 'Content-Type: application/xml' \
-          -H "Authorization: ${GOV_DELIVERY_AUTH}" \
-          -d '<bulletin><email_addresses type="array"><email_address>jrcain@usgs.gov</email_address></email_addresses></bulletin>'
+          # # Post Draft
+          # BULLETIN_NO="$(
+          # curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins.xml \
+          # -H 'Content-Type: application/xml' \
+          # -H "Authorization: ${GOV_DELIVERY_AUTH}" \
+          # -d @bulletin-${GITHUB_PR}.xml | \
+          # xmlstarlet sel -T -t -v /bulletin/to-param)"
+
+          # # Send Test Email
+          # curl -X PUT https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/$BULLETIN_NO/sendtest \
+          # -H 'Content-Type: application/xml' \
+          # -H "Authorization: ${GOV_DELIVERY_AUTH}" \
+          # -d '<bulletin><email_addresses type="array"><email_address>jrcain@usgs.gov</email_address></email_addresses></bulletin>'
 
   #     - name: Setup conda
   #       if: steps.cherryPickStep.outcome == 'success'
