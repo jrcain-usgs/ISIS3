@@ -82,35 +82,29 @@ jobs:
           GITHUB_PR: ${{ needs.check_labels.outputs.pr }}
           GOV_DELIVERY_AUTH: ${{ secrets.GOV_DELIVERY_AUTH }}
         run: |
-          echo 'Auto Cherry Pick Failed'
-          echo $GITHUB_PR
+          echo 'Auto Cherry Pick Failed, sending notification.'
 
-      - name: Successful Cherry Pick
-        if: steps.cherryPickStep.outcome == 'success'
-        run: echo "Successful Cherry Pick"
-        
+          apt install -y xmlstarlet
 
-  #         apt install -y xmlstarlet
+          # Create Template
+          sed -e "s/###PR###/${GITHUB_PR}/" \
+          -e "s/###SHA###/${GITHUB_SHA}/" \
+          -e "s/###CURRENT_LTS###/${CURRENT_LTS}/" \
+          ./.github/bulletin-template.xml > bulletin-${GITHUB_PR}.xml
 
-  #         # Create Template
-  #         sed -e "s/###PR###/${PR}/" \
-  #         -e "s/###SHA###/${SHA}/" \
-  #         -e "s/###CURRENT_LTS###/${CURRENT_LTS}/" \
-  #         ./.github/bulletin-template.xml > bulletin-${PR}.xml
+          # Post Draft
+          BULLETIN_NO="$(
+          curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins.xml \
+          -H 'Content-Type: application/xml' \
+          -H "Authorization: ${GOV_DELIVERY_AUTH}" \
+          -d @bulletin-${GITHUB_PR}.xml | \
+          xmlstarlet sel -T -t -v /bulletin/to-param)"
 
-  #         # Post Draft
-  #         BULLETIN_NO="$(
-  #         curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins.xml \
-  #         -H 'Content-Type: application/xml' \
-  #         -H "Authorization: ${GOV_DELIVERY_AUTH}" \
-  #         -d @bulletin-${PR}.xml | \
-  #         xmlstarlet sel -T -t -v /bulletin/to-param)"
-
-  #         # Send Test Email
-  #         curl -X PUT https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/$BULLETIN_NO/sendtest \
-  #         -H 'Content-Type: application/xml' \
-  #         -H "Authorization: ${GOV_DELIVERY_AUTH}" \
-  #         -d '<bulletin><email_addresses type="array"><email_address>jrcain@usgs.gov</email_address></email_addresses></bulletin>'
+          # Send Test Email
+          curl -X PUT https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/$BULLETIN_NO/sendtest \
+          -H 'Content-Type: application/xml' \
+          -H "Authorization: ${GOV_DELIVERY_AUTH}" \
+          -d '<bulletin><email_addresses type="array"><email_address>jrcain@usgs.gov</email_address></email_addresses></bulletin>'
 
   #     - name: Setup conda
   #       if: steps.cherryPickStep.outcome == 'success'
