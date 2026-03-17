@@ -19,7 +19,8 @@ jobs:
     name: Check PR labels action step
     # Make the output of this job available to other jobs
     outputs: 
-      fixes: ${{steps.execute_py_script.outputs.fixes}}
+      pr: ${{ steps.getpr.outputs.pr }}
+      fixes: ${{ steps.fixfrags.outputs.fixes }}
     steps:
     - name: Checkout files (only the PR Label Checker)
       uses: actions/checkout@v4
@@ -30,11 +31,10 @@ jobs:
       uses: bcgov/action-get-pr@v0.1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Get changed files
+    - name: Detect Fix Change Fragments
       env:
-        GITHUB_PR: ${{ steps.getpr.outputs.pr }}
         GH_TOKEN: ${{ github.token }}
-      id: files
+      id: fixfrags
       run: |
         if gh api repos/${{ github.repository }}/pulls/${{ steps.getpr.outputs.pr }}/files --jq '.[].filename' | \
         grep '^changes\/[0-9]*\.fix\.md$'; then
@@ -44,56 +44,51 @@ jobs:
             echo "No Fixes Found"
             echo "fixes=false" >> $GITHUB_OUTPUT
         fi
-
-  
-    
-    # - name: Write Output
-    #   id: execute_py_script
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     GITHUB_API_URL: ${{ secrets.GITHUB_API_URL }}
-    #     GITHUB_SERVER_URL: ${{ secrets.GITHUB_SERVER_URL }}
-    #   run: echo "result=$(python ./.github/pr_label_checker.py)" >> "$GITHUB_OUTPUT"
-    # - name: Show Output
-    #   run: echo "${{ steps.execute_py_script.outputs.result }}"
+    - name: Show Output
+      run: echo "${{ steps.fixfrags.outputs.fixes }}"
 
 
-  # cherrypick-lts:
-  #   needs: check_labels
-  #   # Only run this step if code was a bugfix
-  #   if: contains(needs.check_labels.outputs.result, 'bugfix_')
-  #   runs-on: ubuntu-22.04
-  #   defaults:
-  #     run:
-  #       shell: bash -l {0} # bash login mode so conda can auto activate isis env
-  #   permissions:
-  #     pull-requests: write
-  #     contents: write
-  #   steps:
-  #     - name: Get PR number
-  #       id: getpr
-  #       uses: bcgov/action-get-pr@v0.1.0
-  #     - name: Checkout Repo
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #         ref: '${{ env.CURRENT_LTS }}' # This branch must exist in the repo.  Target LTS changes branch.
-  #         fetch-depth: '0'
-  #     - name: Configure git
-  #       run: |
-  #         git config user.name "github-actions[bot]"
-  #         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  #     - name: Cherry Pick
-  #       id: cherryPickStep
-  #       continue-on-error: true
-  #       run: git cherry-pick -m 1 $GITHUB_SHA
+  cherrypick-lts:
+    needs: check_labels
+    # Only run this step if code was a bugfix
+    if: needs.check_labels.outputs.fixes == 'true')
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash -l {0} # bash login mode so conda can auto activate isis env
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: '${{ env.CURRENT_LTS }}' # This branch must exist in the repo.  Target LTS changes branch.
+          fetch-depth: '0'
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Cherry Pick
+        id: cherryPickStep
+        continue-on-error: true
+        run: git cherry-pick -m 1 $GITHUB_SHA
 
-  #     - name: Failed Cherry Pick - Email
-  #       if: steps.cherryPickStep.outcome = 'failure'
-  #       env:
-  #         GITHUB_PR: ${{ steps.getpr.outputs.pr }}
-  #         GOV_DELIVERY_AUTH: ${{ secrets.GOV_DELIVERY_AUTH }}
-  #       run: |
+      - name: Failed Cherry Pick - Email
+        if: steps.cherryPickStep.outcome = 'failure'
+        env:
+          GITHUB_PR: ${{ needs.check_labels.outputs.pr }}
+          GOV_DELIVERY_AUTH: ${{ secrets.GOV_DELIVERY_AUTH }}
+        run: |
+          echo 'Auto Cherry Pick Failed'
+          echo $GITHUB_PR
+
+      - name: Successful Cherry Pick
+        if: steps.cherryPickStep.outcome == 'success'
+        run: echo "Successful Cherry Pick"
+        
+
   #         apt install -y xmlstarlet
 
   #         # Create Template
