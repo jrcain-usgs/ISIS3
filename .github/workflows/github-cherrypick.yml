@@ -113,6 +113,14 @@ jobs:
         continue-on-error: true
         run: git cherry-pick -m 1 $GITHUB_SHA
 
+
+      - name: Failed Cherry Pick - Re-Checkout
+        if: steps.cherryPickStep.outcome == 'failure'
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            .github
+
       - name: Failed Cherry Pick - Email
         if: steps.cherryPickStep.outcome == 'failure'
         env:
