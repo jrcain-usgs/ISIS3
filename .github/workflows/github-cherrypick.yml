@@ -84,7 +84,8 @@ jobs:
         run: |
           echo 'Auto Cherry Pick Failed, sending notification.'
 
-          apt install -y xmlstarlet
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
 
           # Create Template
           sed -e "s/###PR###/${GITHUB_PR}/" \
