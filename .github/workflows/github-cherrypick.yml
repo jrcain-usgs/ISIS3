@@ -51,7 +51,7 @@ jobs:
   cherrypick-lts:
     needs: check_labels
     # Only run this step if code was a bugfix
-    if: needs.check_labels.outputs.fixes == 'true')
+    if: needs.check_labels.outputs.fixes == 'true'
     runs-on: ubuntu-22.04
     defaults:
       run:
