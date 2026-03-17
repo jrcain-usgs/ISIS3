@@ -129,8 +129,8 @@ jobs:
         run: |
           echo 'Auto Cherry Pick Failed, sending notification.'
 
-          sudo apt-get update
-          sudo apt-get install -y xmlstarlet
+          # sudo apt-get update
+          # sudo apt-get install -y xmlstarlet
 
           # Create Template
           sed -e "s/###PR###/${GITHUB_PR}/" \
@@ -139,7 +139,7 @@ jobs:
           .github/cherry-pick-bulletin-template.xml > bulletin-${GITHUB_PR}.xml
 
           # Post and Send Bulletin
-          curl -X POST https://stage-api.govdelivery.com/api/account/USDOIGS/bulletins/send_now \
+          curl -X POST https://api.govdelivery.com/api/account/USDOIGS/bulletins/send_now \
           -H 'Content-Type: application/xml' \
           -H "Authorization: ${GOV_DELIVERY_AUTH}" \
           -d @bulletin-${GITHUB_PR}.xml
