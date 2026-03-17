@@ -31,10 +31,11 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Check if PR
+      if: steps.getpr.outcome == 'failure'
       run: |
-        echo "No PR Number found (this is probably just a push). Exiting..."
-        exit
+        echo "No PR Number found (this is probably just a push).  Further steps skipped."
     - name: Detect Fix Change Fragments
+      if: steps.getpr.outcome == 'success'
       env:
         GH_TOKEN: ${{ github.token }}
       id: fixfrags
@@ -47,9 +48,6 @@ jobs:
             echo "No Fixes Found"
             echo "fixes=false" >> $GITHUB_OUTPUT
         fi
-    - name: Show Output
-      run: echo "${{ steps.fixfrags.outputs.fixes }}"
-
 
   cherrypick-lts:
     needs: check_labels
