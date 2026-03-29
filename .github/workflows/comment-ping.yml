@@ -1,0 +1,19 @@
+name: Comment Ping test
+
+on: pull_request
+
+jobs:
+  post_comment:
+    runs-on: ubuntu-latest
+    permissions: 
+      pull-requests: write 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: comment with Ping
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          message: |
+            Maintainers (@Kelvinrr @jrcain-usgs): 
+            This is a test message for the cherry-pick CI/CD,
+            to see if it will ping us with an email/notification you can see.
